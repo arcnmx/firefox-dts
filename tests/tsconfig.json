@@ -4,7 +4,10 @@
 		"isolatedModules": false,
 		"outDir": "../build/tests"
 	},
-	"include": ["./*"],
+	"include": [
+		"../build/types/*.d.ts", "../src/*.d.ts",
+		"./*"
+	],
 	"references": [
 		{ "path": "../src" }
 	]
