@@ -42,20 +42,27 @@ declare interface nsCID<Interface extends nsISupports = nsISupports> extends nsI
 	createInstance<I extends nsIID>(int: I): XpInterfaceOf<I>;
 }
 
+declare interface nsISupports {
+	QueryInterface<I extends nsIID>(int: I): XpInterfaceOf<I>;
+}
+
+declare interface nsIInterfaceRequestor {
+	getInterface<I extends nsIID>(int: I): XpInterfaceOf<I>;
+}
+
 declare interface ChromeUtils {
 	import(url: string): any
 	import(url: 'resource://gre/modules/Services.jsm'): { Services: XpServices } // btw: Services = Cu.createServicesCache(); ( https://fossies.org/linux/firefox/toolkit/modules/Services.jsm }
 }
 
-type XpContract<I extends nsISupports> = nsCID<I>
+type XpContract<I extends nsISupports> = nsCID<I>;
 
 declare interface nsIXPCComponents_Classes {
-	//readonly [index: Exclude<string, 'QueryInterface'>]: nsCID;
-	//readonly [index: 'QueryInterface']: any;
+	readonly [index: string]: nsCID;
 }
+
 declare interface nsIXPCComponents_Interfaces {
-	//readonly [index: Exclude<string, 'QueryInterface'>]: nsIID;
-	//readonly [index: 'QueryInterface']: any;
+	readonly [index: string]: nsIID;
 }
 
 declare interface nsIXPCComponents_Utils {

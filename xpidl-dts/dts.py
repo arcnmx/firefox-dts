@@ -38,6 +38,10 @@ blacklisted_types = [
     "DOMTimeStamp",
     "DOMHighResTimeStamp",
 ]
+base_exceptions = [
+    "nsIXPCComponents_Classes",
+    "nsIXPCComponents_Interfaces",
+]
 
 def sanitize_ident(ident):
     if ident in reserved_keywords:
@@ -135,7 +139,9 @@ def process_method(method, file):
 def process_interface(interface, file):
     if interface.namemap is None:
         raise Exception("Interface was not resolved")
-    base = f" extends {interface.base}" if interface.base is not None else ''
+    base = f" extends {interface.base}" if interface.base is not None else ""
+    if interface.name in base_exceptions:
+        base = ""
     print(f"interface {interface.name}{base} {{", file=file)
     enums = []
     for member in interface.members:
@@ -235,9 +241,8 @@ class Xpidl(object):
         print(f"interface nsIXPCComponents_Interfaces {{", file=file)
         for idl in self.idls:
             for item in idl.productions:
-                if item.kind == "interface":
-                    #print(f"\treadonly {item.name}: '{item.attributes.uuid}';", file=file)
-                    print(f"\treadonly {item.name}: nsIID<{item.name}>;", file=file)
+                if item.kind == "interface" and not item.name in base_exceptions:
+                    print(f"\treadonly {item.name}: nsIID<{item.name}> /*& {{ name: '{item.name}', number: '{item.attributes.uuid}' }}*/;", file=file)
         print(f"}}", file=file)
 
 #class ManifestParser(object):
