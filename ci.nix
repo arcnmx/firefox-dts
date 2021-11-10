@@ -9,7 +9,8 @@ in {
   };
   tasks = {
     build.inputs = with firefox-dts; [
-      firefox-dts firefox-idl xpidl xpidl-dts WebIDL
+      firefox-idl xpidl xpidl-dts WebIDL
+      (firefox-dts.overrideAttrs (old: { doCheck = true; }))
     ];
   };
 }

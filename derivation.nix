@@ -1,6 +1,7 @@
 { stdenvNoCC
 , xpidl-dts ? buildPackages.callPackage ./xpidl-dts/derivation.nix { }
 , firefox-idl ? callPackage ./firefox-idl/firefox-idl.nix { }
+, typescript ? buildPackages.nodePackages.typescript
 , nix-gitignore
 , buildPackages, callPackage
 }: stdenvNoCC.mkDerivation {
@@ -8,6 +9,7 @@
   version = "0.0.1";
 
   nativeBuildInputs = [ xpidl-dts ];
+  checkInputs = [ typescript ];
   inherit firefox-idl;
 
   src = nix-gitignore.gitignoreSourcePure [ ''

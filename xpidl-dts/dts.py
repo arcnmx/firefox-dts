@@ -22,16 +22,21 @@ builtin_types = {
 }
 special_types = {
     #"nsid": "nsid",
-    #"utf8string": "nsCString",
-    #"cstring": "nsCString",
-    #"astring": "nsString",
+    "utf8string": "nsCString",
+    "cstring": "nsCString",
+    "astring": "nsString",
     "jsval": "unknown",
-    "promise": "Promise",
+    "promise": "Promise<unknown>",
+    "Promise": "Promise<unknown>",
 }
 reserved_keywords = [
     "debugger",
     "function",
     "import",
+]
+blacklisted_types = [
+    "DOMTimeStamp",
+    "DOMHighResTimeStamp",
 ]
 
 def sanitize_ident(ident):
@@ -66,16 +71,23 @@ def format_typename(ty, name=None):
         b = builtin_name(ty.nativename, ty.name)
         return builtin_name(ty.nativename, ty.name, True)
     elif isinstance(ty, xpidl.LegacyArray):
-        return f"LegacyArray<{format_typename(ty.type)}>"
+        return f"XpLegacyArray<{format_typename(ty.type)}>"
     elif isinstance(ty, xpidl.Array):
         # TODO: elem_ty = ty.type.resolve(idl)
         return f"Array<{format_typename(ty.type)}>"
     elif isinstance(ty, xpidl.Native):
-        if ty.specialtype is not None and ty.specialtype in special_types:
+        if ty.specialtype in special_types:
             return special_types[ty.specialtype]
+        elif ty.specialtype == "nsid":
+            return ty.nativename
         else:
-            return ty.name
-    elif isinstance(ty, xpidl.CEnum) or ty.kind == "interface" or ty.kind == "forward" or ty.kind == "webidl":
+            nativename = ty.nativename
+            if isinstance(nativename, tuple):
+                nativename = nativename[2]
+            return f"XpNative<'{nativename}'>"
+    elif isinstance(ty, xpidl.CEnum):
+        return f"{ty.iface.name}.{ty.basename}"
+    elif ty.kind == "interface" or ty.kind == "forward" or ty.kind == "webidl":
         # forward declarations are fine to reference as-is
         return ty.name
     else:
@@ -83,13 +95,13 @@ def format_typename(ty, name=None):
         return ty.name
 
 def process_enum(enum, file):
-    print(f"\tdeclare enum {enum.basename} {{", file=file)
+    print(f"\tenum {enum.basename} {{", file=file)
     for variant in enum.variants:
         print(f"\t\t{variant.name} = {variant.value},", file=file)
     print(f"\t}}", file=file)
 
 def process_const(attr, file):
-    print(f"\tconst {attr.name}: {format_typename(attr.realtype, attr.type)} = {attr.value};", file=file)
+    print(f"\treadonly {attr.name}: {format_typename(attr.realtype, attr.type)} & {attr.value};", file=file)
 
 def process_attribute(attr, file):
     if attr.noscript or attr.notxpcom:
@@ -121,17 +133,16 @@ def process_method(method, file):
     print(f"\t{method.name}({', '.join(params)}): {ret};", file=file)
 
 def process_interface(interface, file):
-    if interface.attributes.noscript:
-        return
     if interface.namemap is None:
         raise Exception("Interface was not resolved")
     base = f" extends {interface.base}" if interface.base is not None else ''
-    print(f"declare interface {interface.name}{base} {{", file=file)
+    print(f"interface {interface.name}{base} {{", file=file)
     enums = []
-    consts = []
     for member in interface.members:
+        if interface.attributes.noscript:
+            break
         if isinstance(member, xpidl.ConstMember):
-            consts.append(member)
+            process_const(member, file)
         elif isinstance(member, xpidl.Attribute):
             process_attribute(member, file)
         elif isinstance(member, xpidl.Method):
@@ -143,19 +154,17 @@ def process_interface(interface, file):
         else:
             raise Exception(f"Unexpected interface member: {member}")
     print(f"}}", file=file)
-    if len(enums) > 0 or len(consts) > 0:
+    if len(enums) > 0:
         print(f"declare namespace {interface.name} {{", file=file)
         for member in enums:
             process_enum(member, file)
-        for member in consts:
-            process_const(member, file)
         print(f"}}", file=file)
 
 native_tag = "XpidlNative"
 def process_native(native, file):
     if native.name in special_types:
         return
-    if native.specialtype == "nsid":
+    elif native.specialtype == "nsid":
         print(f"declare type {native.name} = nsid;", file=file)
     else:
         nativename = native.nativename
@@ -164,39 +173,51 @@ def process_native(native, file):
         print(f"declare type {native.name} = {{ readonly [{native_tag}]: '{nativename}' }};", file=file)
 
 def process_typedef(typedef, file):
+    if typedef.name in blacklisted_types:
+        return
     print(f"declare type {typedef.name} = {format_typename(typedef.realtype, typedef.type)};", file=file)
 
 def process_item(item, file):
     if item.kind == "interface":
         process_interface(item, file)
     elif item.kind == "native":
-        process_native(item, file)
+        #process_native(item, file)
+        pass
     elif item.kind == "typedef":
         process_typedef(item, file)
     elif item.kind == "include" or item.kind == "forward" or item.kind == "cdata":
         pass
+    elif item.kind == "webidl":
+        print(f"interface {item.name} {{ }}", file=file)
     else:
         print(f"ignoring unknown {item.kind}", file=sys.stderr)
 
 class Xpidl(object):
-    def __init__(self, xpidl_dir, webidlconfig={}):
-        self.xpidl_dir = xpidl_dir
+    def __init__(self, webidlconfig={}):
+        self.xpidl_files = []
         self.parser = xpidl.IDLParser()
         self.idls = []
         self.incdirs = []
         self.includeCache = {}
         self.webidlconfig = webidlconfig
 
+    def add_path(self, path):
+        if os.path.isdir(path):
+            for path in pathlib.Path(path).rglob('*.idl'):
+                self.xpidl_files.append(path)
+        else:
+            self.xpidl_files.append(path)
+
     def parse_all(self):
-        for path in pathlib.Path(self.xpidl_dir).rglob('*.idl'):
+        for path in self.xpidl_files:
             print(f"Parsing {path}...", file=sys.stderr)
             idl = open(path, encoding="utf-8").read()
             idl = self.parser.parse(idl, filename=path)
             idl.pathname = path
             self.idls.append(idl)
 
-    def resolve_incdirs(self, root=None):
-        for root, dirnames, filenames in os.walk(root or self.xpidl_dir):
+    def resolve_incdirs(self, root):
+        for root, dirnames, filenames in os.walk(root):
             for dirname in dirnames:
                 self.incdirs.append(os.path.join(root, dirname))
 
@@ -211,11 +232,12 @@ class Xpidl(object):
             #print(json.dumps(jsonxpt.build_typelib(idl)))
             for item in idl.productions:
                 process_item(item, file)
-        print(f"declare interface nsIXPCComponents_Interfaces {{", file=file)
+        print(f"interface nsIXPCComponents_Interfaces {{", file=file)
         for idl in self.idls:
             for item in idl.productions:
                 if item.kind == "interface":
-                    print(f"\treadonly {item.name}: '{item.attributes.uuid}';", file=file)
+                    #print(f"\treadonly {item.name}: '{item.attributes.uuid}';", file=file)
+                    print(f"\treadonly {item.name}: nsIID<{item.name}>;", file=file)
         print(f"}}", file=file)
 
 #class ManifestParser(object):
@@ -240,13 +262,19 @@ class Class(object):
     def cc(self):
         return self.contract_ids[0]
 
-    def ts_type(self):
-        out = ["XpComponent"]
+    def type_name(self):
         if self.type is not None:
             if "::" in self.type:
-                out.append(self.type.split("::")[-1])
+                return self.type.split("::")[-1]
             else:
-                out.append(self.type)
+                return self.type
+        else:
+            return None
+
+    def ts_type(self):
+        out = ["XpComponent", "nsISupports"]
+        if self.type is not None:
+            out.append(self.type_name())
         out.extend(self.interfaces)
         return ' & '.join(out)
 
@@ -303,31 +331,35 @@ def main():
     out = sys.argv[2]
     if mode == "idl":
         root = sys.argv[3]
+        parser = Xpidl()
+        parser.resolve_incdirs(root)
         for dirname in sys.argv[4:]:
             print(f"Parsing IDLs in {dirname}...", file=sys.stderr)
-            parser = Xpidl(dirname)
-            parser.resolve_incdirs(root)
-            parser.parse_all()
-            parser.resolve()
+            parser.add_path(dirname)
+        parser.parse_all()
+        parser.resolve()
         ofile = open(out, "w")
         parser.generate(ofile)
     elif mode == "components":
         xpcom_dir = sys.argv[3]
         manifests = parse_manifest_lists(xpcom_dir)
         ofile = open(out, "w")
-        print(f"declare interface nsIXPCComponents_Classes {{", file=ofile)
+        print(f"interface nsIXPCComponents_Classes {{", file=ofile)
         for path, cls in manifests.items():
             for cl in cls:
                 for cid in cl.contract_ids:
-                    print(f"\treadonly [index: '{cid}']: {cl.ts_type()};", file=ofile)
+                    print(f"\treadonly ['{cid}']: XpContract<{cl.ts_type()}>;", file=ofile)
         print(f"}}", file=ofile)
+        for path, cls in manifests.items():
+            for cl in cls:
+                if cl.type is not None:
+                    print(f"interface {cl.type_name()} extends XpComponent {{ }}", file=ofile)
 
-        print(f"declare namespace ChromeUtils {{", file=ofile)
+        print(f"interface ChromeUtils {{", file=ofile)
         for path, cls in manifests.items():
             for cl in cls:
                 if cl.jsm is not None:
-                    print(f"\tfunction {sanitize_ident('import')}(url: '{cl.jsm}'): {cl.ts_type()};", file=ofile)
-        print(f"\texport {{ {sanitize_ident('import')} as import }}", file=ofile)
+                    print(f"\timport(url: '{cl.jsm}'): {cl.ts_type()};", file=ofile)
         print(f"}}", file=ofile)
 
         print(f"declare namespace nsIXPCComponents_Utils {{", file=ofile)
@@ -341,7 +373,7 @@ def main():
         xpcom_dir = sys.argv[3]
         services = parse_services(xpcom_dir)
         ofile = open(out, "w")
-        print(f"declare interface XpServices {{", file=ofile)
+        print(f"interface XpServices {{", file=ofile)
         for ident, interfaces in services.items():
             print(f"\treadonly {ident}: {' & '.join(interfaces)}", file=ofile)
         print(f"}}", file=ofile)

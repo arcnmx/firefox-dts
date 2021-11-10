@@ -5,30 +5,33 @@ BUILD ?= build
 DTS_PY ?= $(shell nix-build --no-out-link . -A xpidl-dts)
 DESTDIR ?= types
 
+SOURCES := $(wildcard src/*.ts)
 IDL_DIRS := $(shell ./iterate_idl.sh $(IDL_ROOT))
 IDL_DIRNAMES := $(subst /,_,$(IDL_DIRS))
-DTS_FILES := $(patsubst %,$(BUILD)/%.d.ts,$(IDL_DIRNAMES))
+DTS_FILES := $(patsubst %,$(BUILD)/types/%.d.ts,$(IDL_DIRNAMES))
 
-all: $(BUILD)/services.d.ts $(BUILD)/components.d.ts $(DTS_FILES)
+all: $(BUILD)/types/services.d.ts $(BUILD)/types/components.d.ts $(DTS_FILES)
 
 clean:
-	rm -f $(BUILD)/services.d.ts $(BUILD)/components.d.ts
-	rmdir $(BUILD)
+	rm -f $(BUILD)/types/services.d.ts $(BUILD)/types/components.d.ts $(DTS_FILES)
 
-install: xpidl.d.ts $(BUILD)/services.d.ts $(BUILD)/components.d.ts $(DTS_FILES)
+install: $(SOURCES) $(BUILD)/types/services.d.ts $(BUILD)/types/components.d.ts $(DTS_FILES)
 	install -Dm0644 -t $(DESTDIR) $^
 
+check: $(DTS_FILES)
+	tsc -p src --noEmit
+
 $(BUILD):
-	mkdir -p $(BUILD)
+	mkdir -p $(BUILD)/types
 
-$(DTS_FILES):
-	$(DTS_PY) idl $@ $(IDL_ROOT) $(patsubst $(BUILD)/%.d.ts,$(IDL_ROOT)/%,$(subst _,/,$@))
+$(DTS_FILES): $(BUILD)
+	$(DTS_PY) idl $@ $(IDL_ROOT) $(wildcard $(patsubst $(BUILD)/types/%.d.ts,$(IDL_ROOT)/%,$(subst _,/,$@))/*.idl)
 
-$(BUILD)/services.d.ts: $(BUILD)
+$(BUILD)/types/services.d.ts: $(BUILD)
 	$(DTS_PY) services $@ $(XPCOM_ROOT)
 
-$(BUILD)/components.d.ts: $(BUILD)
+$(BUILD)/types/components.d.ts: $(BUILD)
 	$(DTS_PY) components $@ $(XPCOM_ROOT)
 
-.PHONY: all clean install
+.PHONY: all clean install check
 .DELETE_ON_ERROR:

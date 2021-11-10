@@ -1,0 +1,11 @@
+{
+	"extends": "../tsconfig.json",
+	"compilerOptions": {
+		"isolatedModules": false,
+		"outDir": "../build/tests"
+	},
+	"include": ["./*"],
+	"references": [
+		{ "path": "../src" }
+	]
+}
