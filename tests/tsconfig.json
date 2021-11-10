@@ -5,7 +5,7 @@
 		"outDir": "../build/tests"
 	},
 	"include": [
-		"../build/types/*.d.ts", "../src/*.d.ts",
+		"../build/types/*.d.ts", "../src/*.d.ts", // hack around https://github.com/microsoft/TypeScript/issues/29002 :<
 		"./*"
 	],
 	"references": [
