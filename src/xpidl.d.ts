@@ -73,10 +73,3 @@ declare var Components: nsIXPCComponents
 declare var Ci: typeof Components.interfaces
 declare var Cc: typeof Components.classes
 declare var Cu: typeof Components.utils
-
-// an example that should typecheck:
-/*
-var keyObject = Components.classes["@mozilla.org/security/keyobjectfactory;1"]
-.getService(Components.interfaces.nsIKeyObjectFactory)
-.keyFromString(Components.interfaces.nsIKeyObject.HMAC, rawKeyData);
-*/

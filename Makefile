@@ -20,6 +20,7 @@ install: $(SOURCES) $(BUILD)/types/services.d.ts $(BUILD)/types/components.d.ts 
 
 check: $(DTS_FILES)
 	tsc -p src --noEmit
+	tsc -p tests --noEmit
 
 $(BUILD):
 	mkdir -p $(BUILD)/types
