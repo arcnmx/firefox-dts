@@ -5,7 +5,7 @@ BUILD ?= build
 DTS_PY ?= $(shell nix-build --no-out-link . -A xpidl-dts)
 DESTDIR ?= types
 
-SOURCES := $(wildcard src/*.ts)
+SOURCES := $(wildcard src/*.d.ts)
 IDL_DIRS := $(shell ./iterate_idl.sh $(IDL_ROOT))
 IDL_DIRNAMES := $(subst /,_,$(IDL_DIRS))
 DTS_FILES := $(patsubst %,$(BUILD)/types/%.d.ts,$(IDL_DIRNAMES))
@@ -15,7 +15,7 @@ all: $(BUILD)/types/services.d.ts $(BUILD)/types/components.d.ts $(DTS_FILES)
 clean:
 	rm -f $(BUILD)/types/services.d.ts $(BUILD)/types/components.d.ts $(DTS_FILES)
 
-install: $(SOURCES) $(BUILD)/types/services.d.ts $(BUILD)/types/components.d.ts $(DTS_FILES)
+install: package.json $(BUILD)/types/index.d.ts $(SOURCES) $(BUILD)/types/services.d.ts $(BUILD)/types/components.d.ts $(DTS_FILES)
 	install -Dm0644 -t $(DESTDIR) $^
 
 check: $(DTS_FILES)
@@ -33,6 +33,9 @@ $(BUILD)/types/services.d.ts: $(BUILD)
 
 $(BUILD)/types/components.d.ts: $(BUILD)
 	$(DTS_PY) components $@ $(XPCOM_ROOT)
+
+$(BUILD)/types/index.d.ts:
+	for f in services.d.ts components.d.ts $(notdir $(DTS_FILES) $(SOURCES)); do echo "/// <reference path=\"./$$f\" />"; done > $@
 
 .PHONY: all clean install check
 .DELETE_ON_ERROR:
