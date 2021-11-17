@@ -25,18 +25,26 @@ declare interface nsID {
 	toString(): string;
 }
 
+declare const XpidlInterface: unique symbol;
+
 // InterfaceID
-declare interface nsIID<Interface extends nsISupports = nsISupports> extends nsID {
+declare interface nsIID<Interface = nsISupports> extends nsID {
 	readonly name: string;
 	hasInstance(obj: any): boolean;
+
+	readonly [XpidlInterface]: Interface
 }
 
-type XpInterfaceOf<T> = T extends nsIID<infer I> ? I : never;
+// extract Interface from an nsIID
+type XpInterfaceOf<T extends XpidlInterfaceType> = T[typeof XpidlInterface]
+declare interface XpidlInterfaceType {
+	readonly [XpidlInterface]: nsISupports
+}
 
 // ContractID
 declare interface nsCID<Interface extends nsISupports = nsISupports> extends nsID {
 	readonly name: string;
-	getService(): nsISupports;
+	getService(): Interface;
 	getService<I extends nsIID>(int: I): XpInterfaceOf<I>;
 	createInstance(): nsISupports;
 	createInstance<I extends nsIID>(int: I): XpInterfaceOf<I>;

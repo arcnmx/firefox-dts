@@ -98,14 +98,18 @@ def format_typename(ty, name=None):
         print(f"unknown type.kind {ty.kind} for {name}", file=sys.stderr)
         return ty.name
 
-def process_enum(enum, file):
-    print(f"\tenum {enum.basename} {{", file=file)
+def process_enum_members(enum, interface, file):
+    for variant in enum.variants:
+        print(f"\t\treadonly {variant.name}: Xpidl.Enums.{interface.name}_{enum.basename}.{variant.name};", file=file)
+
+def process_enum(enum, interface, file):
+    print(f"\tconst enum {interface.name}_{enum.basename} {{", file=file)
     for variant in enum.variants:
         print(f"\t\t{variant.name} = {variant.value},", file=file)
     print(f"\t}}", file=file)
 
 def process_const(attr, file):
-    print(f"\treadonly {attr.name}: {format_typename(attr.realtype, attr.type)} & {attr.value};", file=file)
+    print(f"\t\treadonly {attr.name}: {format_typename(attr.realtype, attr.type)} & {attr.value};", file=file)
 
 def process_attribute(attr, file):
     if attr.noscript or attr.notxpcom:
@@ -144,27 +148,42 @@ def process_interface(interface, file):
         base = ""
     print(f"interface {interface.name}{base} {{", file=file)
     enums = []
+    consts = []
     for member in interface.members:
         if interface.attributes.noscript:
             break
         if isinstance(member, xpidl.ConstMember):
             process_const(member, file)
+            consts.append(member)
         elif isinstance(member, xpidl.Attribute):
             process_attribute(member, file)
         elif isinstance(member, xpidl.Method):
             process_method(member, file)
         elif isinstance(member, xpidl.CEnum):
             enums.append(member)
+            process_enum_members(member, interface, file)
         elif isinstance(member, xpidl.CDATA):
             pass
         else:
             raise Exception(f"Unexpected interface member: {member}")
     print(f"}}", file=file)
     if len(enums) > 0:
-        print(f"declare namespace {interface.name} {{", file=file)
+        print(f"declare namespace Xpidl.Enums {{", file=file)
         for member in enums:
-            process_enum(member, file)
+            process_enum(member, interface, file)
         print(f"}}", file=file)
+    print(f"declare namespace {interface.name} {{", file=file)
+    for member in enums:
+        print(f"\ttype {member.basename} = Xpidl.Enums.{interface.name}_{member.basename}", file=file)
+    print(f"\tinterface Interface extends nsIID<{interface.name}> {{", file=file)
+    print(f"\t\treadonly name: \"{interface.name}\";", file=file)
+    print(f"\t\treadonly number: \"{interface.attributes.uuid}\";", file=file)
+    for member in enums:
+        process_enum_members(member, interface, file)
+    for member in consts:
+        process_const(member, file)
+    print(f"\t}}", file=file)
+    print(f"}}", file=file)
 
 native_tag = "XpidlNative"
 def process_native(native, file):
@@ -242,7 +261,7 @@ class Xpidl(object):
         for idl in self.idls:
             for item in idl.productions:
                 if item.kind == "interface" and not item.name in base_exceptions:
-                    print(f"\treadonly {item.name}: nsIID<{item.name}> /*& {{ name: '{item.name}', number: '{item.attributes.uuid}' }}*/;", file=file)
+                    print(f"\treadonly {item.name}: {item.name}.Interface;", file=file)
         print(f"}}", file=file)
 
 #class ManifestParser(object):
@@ -276,12 +295,16 @@ class Class(object):
         else:
             return None
 
+    def extends(self):
+        out = ["XpComponent", "globalThis.nsISupports"]
+        out.extend([f"globalThis.{i}" for i in self.interfaces])
+        return out
+
     def ts_type(self):
-        out = ["XpComponent", "nsISupports"]
         if self.type is not None:
-            out.append(self.type_name())
-        out.extend(self.interfaces)
-        return ' & '.join(out)
+            return f"Xpidl.Classes.{self.type_name()}"
+        else:
+            return ' & '.join(self.extends())
 
 class BuildConfig(object):
     substs = { }
@@ -355,10 +378,12 @@ def main():
                 for cid in cl.contract_ids:
                     print(f"\treadonly ['{cid}']: XpContract<{cl.ts_type()}>;", file=ofile)
         print(f"}}", file=ofile)
+        print(f"declare namespace Xpidl.Classes {{", file=ofile)
         for path, cls in manifests.items():
             for cl in cls:
                 if cl.type is not None:
-                    print(f"interface {cl.type_name()} extends XpComponent {{ }}", file=ofile)
+                    print(f"\tinterface {cl.type_name()} extends {', '.join(cl.extends())} {{ }}", file=ofile)
+        print(f"}}", file=ofile)
 
         print(f"interface ChromeUtils {{", file=ofile)
         for path, cls in manifests.items():

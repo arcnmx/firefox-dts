@@ -15,10 +15,10 @@ all: $(BUILD)/types/services.d.ts $(BUILD)/types/components.d.ts $(DTS_FILES)
 clean:
 	rm -f $(BUILD)/types/services.d.ts $(BUILD)/types/components.d.ts $(DTS_FILES)
 
-install: package.json $(BUILD)/types/index.d.ts $(SOURCES) $(BUILD)/types/services.d.ts $(BUILD)/types/components.d.ts $(DTS_FILES)
+install: $(BUILD)/types/index.d.ts $(SOURCES) $(BUILD)/types/services.d.ts $(BUILD)/types/components.d.ts $(DTS_FILES)
 	install -Dm0644 -t $(DESTDIR) $^
 
-check: $(DTS_FILES)
+check: $(BUILD)/types/services.d.ts $(BUILD)/types/components.d.ts $(DTS_FILES)
 	tsc -p src --noEmit
 	tsc -p tests --noEmit
 
