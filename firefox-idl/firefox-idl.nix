@@ -2,6 +2,7 @@
   pname = "firefox-idl";
   name = "${pname}-${old.version}";
 
+  separateDebugInfo = false;
   buildFlags = [ "export" ];
   installFlags = [ "DESTDIR=$(out)" "-f${./Makefile}" ];
   preInstall = ''
