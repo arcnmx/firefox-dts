@@ -123,11 +123,12 @@ def process_method(method, file):
     ret = None
     params = []
     for param in method.params:
+        ident = sanitize_ident(param.name)
         ty = format_typename(param.realtype, param.type)
         if param.array:
             ty = f"Array<{ty}>"
         if param.optional:
-            ty = f"{ty} | null"
+            ident = f"{ident}?"
         elif param.default_value is not None:
             raise Exception(f"param {param.name} of method {method.name} has default but is not optional")
         if param.retval:
@@ -135,7 +136,7 @@ def process_method(method, file):
                 raise Exception(f"method {method.name} has default but is not optional")
             ret = ty
             continue
-        params.append(f"{sanitize_ident(param.name)}: {ty}")
+        params.append(f"{ident}: {ty}")
     if ret is None:
         ret = format_typename(method.realtype, method.type)
     print(f"\t{method.name}({', '.join(params)}): {ret};", file=file)
