@@ -122,13 +122,24 @@ def process_method(method, file):
         return
     ret = None
     params = []
+    optional_allowed = False
+    for param in method.params:
+        if param.optional:
+            optional_allowed = True
+        elif optional_allowed:
+            # in the case that optionals are not the trailing params, they cannot be made optional
+            optional_allowed = False
+            break
     for param in method.params:
         ident = sanitize_ident(param.name)
         ty = format_typename(param.realtype, param.type)
         if param.array:
             ty = f"Array<{ty}>"
         if param.optional:
-            ident = f"{ident}?"
+            if optional_allowed:
+                ident = f"{ident}?"
+            else:
+                ty = f"{ty} | undefined"
         elif param.default_value is not None:
             raise Exception(f"param {param.name} of method {method.name} has default but is not optional")
         if param.retval:
