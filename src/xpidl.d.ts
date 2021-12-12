@@ -7,22 +7,6 @@ declare namespace Xp {
 }
 
 declare namespace Ci {
-	interface nsISupports {
-		QueryInterface<I extends nsIID>(int: I): Xp.InterfaceOf<I>
-	}
-
-	interface nsIInterfaceRequestor {
-		getInterface<I extends nsIID>(int: I): Xp.InterfaceOf<I>
-	}
-
-	interface nsIXPCComponents_Classes {
-		readonly [index: string]: nsCID
-	}
-
-	interface nsIXPCComponents_Interfaces {
-		readonly [index: string]: nsIID
-	}
-
 	interface nsIXPCComponents_Utils {
 	}
 

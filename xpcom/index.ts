@@ -1,6 +1,4 @@
 // http://man.hubwiz.com/docset/JavaScript.docset/Contents/Resources/Documents/developer.mozilla.org/en-US/docs/Mozilla/JavaScript_code_modules/Using.html
-//import "xpcom"
-//import { ChromeUtils } from "xpcom"
 
 export function exportSymbols(symbols: Record<string, any>): void {
 	EXPORTED_SYMBOLS = new Array()
@@ -15,7 +13,7 @@ export function exportSymbols(symbols: Record<string, any>): void {
  *
  * ```typescript
  * class Example extends nsObject implements Ci.nsIObserver {
- *   readonly _nsI: ReadonlyArray<nsIID> = [Ci.nsIObserver];
+ *   readonly _nsI: ReadonlyArray<Xp.nsIID> = [Ci.nsIObserver];
  *   observe(subject: EventTarget & Ci.nsISupports, topic: string, data: any) {
  *     // ...
  *   }
@@ -26,16 +24,16 @@ export abstract class nsObject implements Ci.nsISupports {
 	/**
 	 * List of `Ci` interfaces implemented by this class.
 	 */
-	protected abstract readonly _nsI: ReadonlyArray<nsIID>
+	protected abstract readonly _nsI: ReadonlyArray<Xp.nsIID>
 
-	implementsInterface<I extends nsIID>(int: I): this is Xp.InterfaceOf<I> {
+	implementsInterface<I extends Xp.nsIID>(int: I): this is Xp.InterfaceOf<I> {
 		if (int == Ci.nsISupports) {
 			return true
 		}
 		return this._nsI.includes(int)
 	}
 
-	QueryInterface<I extends nsIID>(int: I): Xp.InterfaceOf<I> {
+	QueryInterface<I extends Xp.nsIID>(int: I): Xp.InterfaceOf<I> {
 		if (this.implementsInterface(int)) {
 			return this
 		} else {

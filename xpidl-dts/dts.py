@@ -83,7 +83,7 @@ def format_typename(ty, name=None):
         if ty.specialtype in special_types:
             return special_types[ty.specialtype]
         elif ty.specialtype == "nsid":
-            return ty.nativename
+            return f"Xp.{ty.nativename}"
         else:
             nativename = ty.nativename
             if isinstance(nativename, tuple):
@@ -184,7 +184,7 @@ def process_interface(interface, file):
     print(f"\t}}", file=file)
     print(f"}}", file=file)
     print(f"declare namespace Ci.{interface.name} {{", file=file)
-    print(f"\tinterface Interface extends nsIID<{interface.name}> {{", file=file)
+    print(f"\tinterface Interface extends Xp.nsIID<{interface.name}> {{", file=file)
     print(f"\t\treadonly name: \"{interface.name}\";", file=file)
     print(f"\t\treadonly number: \"{interface.attributes.uuid}\";", file=file)
     for member in enums:
@@ -200,7 +200,7 @@ def process_interface(interface, file):
             process_enum(member, interface, file)
         print(f"}}", file=file)
 
-native_tag = "Xp.NativeSymbol"
+native_tag = "Xp.Symbols.Native"
 def process_native(native, file):
     if native.name in special_types:
         return
