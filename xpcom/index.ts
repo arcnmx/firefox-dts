@@ -14,15 +14,15 @@ export function exportSymbols(symbols: Record<string, any>): void {
  * A class that makes it easier to implement simple xpcom interfaces.
  *
  * ```typescript
- * class Example extends nsObject implements nsIObserver {
+ * class Example extends nsObject implements Ci.nsIObserver {
  *   readonly _nsI: ReadonlyArray<nsIID> = [Ci.nsIObserver];
- *   observe(subject: EventTarget & nsISupports, topic: string, data: any) {
+ *   observe(subject: EventTarget & Ci.nsISupports, topic: string, data: any) {
  *     // ...
  *   }
  * }
  * ```
  */
-export abstract class nsObject implements nsISupports {
+export abstract class nsObject implements Ci.nsISupports {
 	/**
 	 * List of `Ci` interfaces implemented by this class.
 	 */

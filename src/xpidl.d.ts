@@ -6,34 +6,36 @@ declare namespace Xp {
 	}
 }
 
-// This is only forward-declared in the idl :<
-declare interface nsIScriptElement { }
+declare namespace Ci {
+	interface nsISupports {
+		QueryInterface<I extends nsIID>(int: I): Xp.InterfaceOf<I>
+	}
 
-declare interface nsISupports {
-	QueryInterface<I extends nsIID>(int: I): Xp.InterfaceOf<I>
-}
+	interface nsIInterfaceRequestor {
+		getInterface<I extends nsIID>(int: I): Xp.InterfaceOf<I>
+	}
 
-declare interface nsIInterfaceRequestor {
-	getInterface<I extends nsIID>(int: I): Xp.InterfaceOf<I>
+	interface nsIXPCComponents_Classes {
+		readonly [index: string]: nsCID
+	}
+
+	interface nsIXPCComponents_Interfaces {
+		readonly [index: string]: nsIID
+	}
+
+	interface nsIXPCComponents_Utils {
+	}
+
+	// This is only forward-declared in the idl :<
+	interface nsIScriptElement { }
 }
 
 declare interface ChromeUtils {
 	import(url: string): any
 }
 
-declare interface nsIXPCComponents_Classes {
-	readonly [index: string]: nsCID
-}
-
-declare interface nsIXPCComponents_Interfaces {
-	readonly [index: string]: nsIID
-}
-
-declare interface nsIXPCComponents_Utils {
-}
-
 declare var ChromeUtils: ChromeUtils
-declare var Components: nsIXPCComponents
+declare var Components: Ci.nsIXPCComponents
 declare var Ci: typeof Components.interfaces
 declare var Cc: typeof Components.classes
 declare var Cu: typeof Components.utils

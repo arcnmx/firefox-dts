@@ -4,7 +4,7 @@ namespace test_services {
 
 	console.log(Services.dirsvc.get(NS_APP_USER_CHROME_DIR, Ci.nsIFile));
 
-	const sss: nsIStyleSheetService = Cc["@mozilla.org/content/style-sheet-service;1"]
+	const sss: Ci.nsIStyleSheetService = Cc["@mozilla.org/content/style-sheet-service;1"]
 		.getService(Ci.nsIStyleSheetService);
 	console.assert(sss.AGENT_SHEET == Ci.nsIStyleSheetService.AGENT_SHEET);
 }
