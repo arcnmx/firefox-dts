@@ -20,6 +20,7 @@ install: $(BUILD)/types/index.d.ts $(SOURCES) $(BUILD)/types/services.d.ts $(BUI
 
 check: $(BUILD)/types/services.d.ts $(BUILD)/types/components.d.ts $(DTS_FILES)
 	tsc -p src --noEmit
+	tsc -p xpcom --noEmit
 	tsc -p tests --noEmit
 
 $(BUILD):

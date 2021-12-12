@@ -1,0 +1,9 @@
+{
+	"extends": "../tsconfig.json",
+	"compilerOptions": {
+		"composite": true,
+		"declarationMap": true,
+		"outDir": "../build/xpcom"
+	},
+	"include": ["../build/types/*", "../src/*.d.ts",  "./*"]
+}

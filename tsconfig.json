@@ -11,6 +11,7 @@
 	},
 	"references": [
 		{ "path": "./src" },
+		{ "path": "./xpcom" },
 		{ "path": "./tests" }
 	],
 	"files": []

@@ -9,6 +9,7 @@
 		"./*"
 	],
 	"references": [
-		{ "path": "../src" }
+		{ "path": "../src" },
+		{ "path": "../xpcom" }
 	]
 }

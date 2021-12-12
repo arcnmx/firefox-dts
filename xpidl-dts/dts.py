@@ -22,9 +22,9 @@ builtin_types = {
 }
 special_types = {
     #"nsid": "nsid",
-    "utf8string": "nsCString",
-    "cstring": "nsCString",
-    "astring": "nsString",
+    "utf8string": "Xp.nsCString",
+    "cstring": "Xp.nsCString",
+    "astring": "Xp.nsString",
     "jsval": "unknown",
     "promise": "Promise<unknown>",
     "Promise": "Promise<unknown>",
@@ -75,7 +75,7 @@ def format_typename(ty, name=None):
         b = builtin_name(ty.nativename, ty.name)
         return builtin_name(ty.nativename, ty.name, True)
     elif isinstance(ty, xpidl.LegacyArray):
-        return f"XpLegacyArray<{format_typename(ty.type)}>"
+        return f"Xp.LegacyArray<{format_typename(ty.type)}>"
     elif isinstance(ty, xpidl.Array):
         # TODO: elem_ty = ty.type.resolve(idl)
         return f"Array<{format_typename(ty.type)}>"
@@ -88,7 +88,7 @@ def format_typename(ty, name=None):
             nativename = ty.nativename
             if isinstance(nativename, tuple):
                 nativename = nativename[2]
-            return f"XpNative<'{nativename}'>"
+            return f"Xp.Native<'{nativename}'>"
     elif isinstance(ty, xpidl.CEnum):
         return f"{ty.iface.name}.{ty.basename}"
     elif ty.kind == "interface" or ty.kind == "forward" or ty.kind == "webidl":
@@ -100,7 +100,7 @@ def format_typename(ty, name=None):
 
 def process_enum_members(enum, interface, file):
     for variant in enum.variants:
-        print(f"\t\treadonly {variant.name}: Xpidl.Enums.{interface.name}_{enum.basename}.{variant.name};", file=file)
+        print(f"\t\treadonly {variant.name}: Xp.Enums.{interface.name}_{enum.basename}.{variant.name};", file=file)
 
 def process_enum(enum, interface, file):
     print(f"\tconst enum {interface.name}_{enum.basename} {{", file=file)
@@ -180,13 +180,13 @@ def process_interface(interface, file):
             raise Exception(f"Unexpected interface member: {member}")
     print(f"}}", file=file)
     if len(enums) > 0:
-        print(f"declare namespace Xpidl.Enums {{", file=file)
+        print(f"declare namespace Xp.Enums {{", file=file)
         for member in enums:
             process_enum(member, interface, file)
         print(f"}}", file=file)
     print(f"declare namespace {interface.name} {{", file=file)
     for member in enums:
-        print(f"\ttype {member.basename} = Xpidl.Enums.{interface.name}_{member.basename}", file=file)
+        print(f"\ttype {member.basename} = Xp.Enums.{interface.name}_{member.basename}", file=file)
     print(f"\tinterface Interface extends nsIID<{interface.name}> {{", file=file)
     print(f"\t\treadonly name: \"{interface.name}\";", file=file)
     print(f"\t\treadonly number: \"{interface.attributes.uuid}\";", file=file)
@@ -197,7 +197,7 @@ def process_interface(interface, file):
     print(f"\t}}", file=file)
     print(f"}}", file=file)
 
-native_tag = "XpidlNative"
+native_tag = "Xp.NativeSymbol"
 def process_native(native, file):
     if native.name in special_types:
         return
@@ -308,13 +308,13 @@ class Class(object):
             return None
 
     def extends(self):
-        out = ["XpComponent", "globalThis.nsISupports"]
+        out = ["Xp.Component", "globalThis.nsISupports"]
         out.extend([f"globalThis.{i}" for i in self.interfaces])
         return out
 
     def ts_type(self):
         if self.type is not None:
-            return f"Xpidl.Classes.{self.type_name()}"
+            return f"Xp.Classes.{self.type_name()}"
         else:
             return ' & '.join(self.extends())
 
@@ -388,9 +388,9 @@ def main():
         for path, cls in manifests.items():
             for cl in cls:
                 for cid in cl.contract_ids:
-                    print(f"\treadonly ['{cid}']: XpContract<{cl.ts_type()}>;", file=ofile)
+                    print(f"\treadonly ['{cid}']: Xp.Contract<{cl.ts_type()}>;", file=ofile)
         print(f"}}", file=ofile)
-        print(f"declare namespace Xpidl.Classes {{", file=ofile)
+        print(f"declare namespace Xp.Classes {{", file=ofile)
         for path, cls in manifests.items():
             for cl in cls:
                 if cl.type is not None:
@@ -415,9 +415,11 @@ def main():
         xpcom_dir = sys.argv[3]
         services = parse_services(xpcom_dir)
         ofile = open(out, "w")
-        print(f"interface XpServices {{", file=ofile)
+        print(f"declare namespace Xp {{", file=ofile)
+        print(f"\tinterface Services {{", file=ofile)
         for ident, interfaces in services.items():
-            print(f"\treadonly {ident}: {' & '.join(interfaces)}", file=ofile)
+            print(f"\t\treadonly {ident}: {' & '.join(interfaces)}", file=ofile)
+        print(f"\t}}", file=ofile)
         print(f"}}", file=ofile)
 
 if __name__ == "__main__":
