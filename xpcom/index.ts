@@ -26,7 +26,7 @@ export abstract class nsObject implements Ci.nsISupports {
 	 */
 	protected abstract readonly _nsI: ReadonlyArray<Xp.nsIID>
 
-	implementsInterface<I extends Xp.nsIID>(int: I): this is Xp.InterfaceOf<I> {
+	protected implementsInterface<I extends Xp.nsIID>(int: I): this is Xp.InterfaceOf<I> {
 		if (int == Ci.nsISupports) {
 			return true
 		}
