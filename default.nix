@@ -12,8 +12,9 @@
     shell = with packages; mkShell {
       DTS_PY = "${xpidl-dts-impure}/bin/dts.py";
       FIREFOX_IDL_ROOT = firefox-idl;
+      CMAKE_GENERATOR = "Ninja";
 
-      nativeBuildInputs = [ gnumake python xpidl-dts-impure nodePackages.typescript ];
+      nativeBuildInputs = [ gnumake python xpidl-dts-impure nodePackages.typescript cmake ninja ];
     };
   };
 in packages.firefox-dts // packages

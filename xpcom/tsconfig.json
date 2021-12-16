@@ -3,7 +3,9 @@
 	"compilerOptions": {
 		"composite": true,
 		"declarationMap": true,
-		"outDir": "../build/xpcom"
+		"outDir": "../build/ts/xpcom",
+		"types": ["firefox-dts"],
+		"rootDirs": [".", "node_modules/@self/generated"]
 	},
-	"include": ["../build/types/*", "../src/*.d.ts",  "./*"]
+	"include": ["*", "node_modules/@self/generated/*"]
 }

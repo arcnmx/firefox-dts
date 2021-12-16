@@ -1,4 +1,5 @@
 { stdenvNoCC
+, cmake, ninja
 , xpidl-dts ? buildPackages.callPackage ./xpidl-dts/derivation.nix { }
 , firefox-idl ? callPackage ./firefox-idl/firefox-idl.nix { }
 , typescript ? buildPackages.nodePackages.typescript
@@ -6,11 +7,9 @@
 , buildPackages, callPackage
 }: stdenvNoCC.mkDerivation {
   pname = "firefox-dts";
-  version = "0.0.1";
+  version = "0.1.0";
 
-  nativeBuildInputs = [ xpidl-dts ];
-  checkInputs = [ typescript ];
-  inherit firefox-idl;
+  nativeBuildInputs = [ xpidl-dts cmake ninja typescript ];
 
   src = nix-gitignore.gitignoreSourcePure [ ''
     *.nix
@@ -18,18 +17,11 @@
     /xpidl-dts/
   '' ./.gitignore ] ./.;
 
-  makeFlags = [
-    "DTS_PY=dts.py"
-    "FIREFOX_IDL_ROOT=$(firefox-idl)"
+  cmakeFlags = [
+    "-DFIREFOX_IDL_ROOT=${firefox-idl}"
   ];
 
   installFlags = [
     "DESTDIR=${placeholder "out"}"
   ];
-
-  preBuild = ''
-    patchShebangs iterate_idl.sh
-  '';
-
-  enableParallelBuilding = true;
 }

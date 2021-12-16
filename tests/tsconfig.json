@@ -2,14 +2,10 @@
 	"extends": "../tsconfig.json",
 	"compilerOptions": {
 		"isolatedModules": false,
-		"outDir": "../build/tests"
+		"outDir": "../build/ts/tests",
+		"types": ["firefox-dts"],
+		"moduleResolution": "Node",
+		"rootDirs": [".", "node_modules/@self/generated"]
 	},
-	"include": [
-		"../build/types/*.d.ts", "../src/*.d.ts", // hack around https://github.com/microsoft/TypeScript/issues/29002 :<
-		"./*"
-	],
-	"references": [
-		{ "path": "../src" },
-		{ "path": "../xpcom" }
-	]
+	"include": ["*", "node_modules/@self/generated/*"]
 }

@@ -3,7 +3,8 @@
 	"compilerOptions": {
 		"composite": true,
 		"declarationMap": true,
-		"outDir": "../build/src"
+		"rootDirs": [".", "node_modules/@self/generated"],
+		"outDir": "../build/ts/src"
 	},
-	"include": ["../build/types/*", "./*"]
+	"include": ["*", "node_modules/@self/generated/*"]
 }
