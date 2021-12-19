@@ -9,7 +9,9 @@ set(PROJECT_EXTRA_AUTHOR arc)
 set(PROJECT_EXTRA_REPO github:arcnmx/firefox-dts)
 set(PROJECT_LICENSE MIT)
 
-include(./cmake/git.cmake)
+set(Lib_ROOT "${CMAKE_SOURCE_DIR}/cmake/lib")
+find_package(Lib REQUIRED COMPONENTS util git nix node generate lang)
+
 git_tag(PROJECT_EXTRA_GIT PREFIX v CHECK)
 if (PROJECT_EXTRA_GIT AND PROJECT_EXTRA_GIT_PRERELEASE)
 	set(PROJECT_EXTRA_VERSION "-${PROJECT_EXTRA_GIT_PRERELEASE}")
@@ -26,11 +28,6 @@ set(DTS_PY "$ENV{DTS_PY}" CACHE STRING "xpidl-dts")
 if (CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME AND TESTS)
 	include(CTest)
 endif()
-
-include(./cmake/nix.cmake)
-include(./cmake/node.cmake)
-include(./cmake/gen.cmake)
-include(./cmake/ts.cmake)
 
 enable_language(TypeScript)
 

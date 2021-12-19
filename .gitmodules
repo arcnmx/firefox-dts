@@ -1,0 +1,4 @@
+[submodule "cmake/lib"]
+	path = cmake/lib
+	url = https://github.com/arcnmx/cmake-lib.git
+	branch = main
