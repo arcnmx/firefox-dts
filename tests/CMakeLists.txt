@@ -11,6 +11,6 @@ generate_node_modules(node_modules
 	MODULES ${modules}
 )
 
-if (CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME AND TESTS)
+if (CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME AND BUILD_TESTING)
 	message(WARNING "TODO: tests")
 endif()
